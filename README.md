@@ -1,10 +1,8 @@
 # sh
-# SHITPRESS
 
 Tiny suckless compression library. 
 
-
-Features
+## Features
 
 - single header library, no linking bullcrap:
   - fewer than 200 lines, extremely small and nonbloated
