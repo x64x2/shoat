@@ -38,3 +38,4 @@ lz4 utility (sizes in bytes):
 | 100% random data        | 1024       | 1027                   | 1025                    | 100.2%              | 100.0%                | 1043             | 101.8%          |
 | forged malicious data   | 100        | 200                    | 101                     | 200.0%              | 101.0%                | 30               | 30.0%           |
 
+[Guide](https://a1bert.kapsi.fi/Dev/pucrunch/packing.html)
