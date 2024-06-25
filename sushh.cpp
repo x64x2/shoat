@@ -4,107 +4,103 @@
 
 #define REALLOC_BY 2048
 
-using buffer_t = std::vector<unsigned char>;
+using Buffer = std::vector<unsigned char>;
 
-int main (int argc, char** argv)
-{
-    buffer data(1000, 'X');
-	buffer compressed(data.size()), decompressed(data.size());
-
-    if(data != decompressed) cerr << "Oh snap! Data mismatch!" << endl;
-	else cout << "Decompressed data matches original :o)" << endl;
- 
-	return 1;
+void readInput(Buffer& buffer) {
+    int c;
+    while ((c = std::cin.get()) != EOF) {
+        buffer.push_back(c);
+    }
 }
 
-unsigned long buffer1Size = 0, buffer2Size = 0;
-unsigned long virtualInputPos = 0;
-
-void buffer1Size(buffer, unsigned char byte) {
-    buffer.push_back(byte);
+void reallocateBuffer(Buffer& buffer) {
     if (buffer.size() % REALLOC_BY == 0) {
         buffer.reserve(buffer.size() + REALLOC_BY);
     }
 }
 
-void freeBuffer1() {
-    buffer1.clear();
+void appendToBuffer(Buffer& buffer, unsigned char byte) {
+    buffer.push_back(byte);
+    reallocateBuffer(buffer);
+}
+
+unsigned int SH_in() {
+    static Buffer buffer;
+    static unsigned long virtualInputPos = 0;
+    static unsigned long buffer1Size = 0;
+
+    if (virtualInputPos >= buffer1Size) {
+        return 0xffff;
+    }
+    return buffer[virtualInputPos++];
+}
+
+Buffer buffer2;
+unsigned long buffer2Size = 0;
+
+void SH_out(unsigned char byte) {
+    appendToBuffer(buffer2, byte);
 }
 
 void freeBuffer2() {
     buffer2.clear();
-}
-
-unsigned int SPR_in() {
-    if (virtualInputPos >= buffer1Size) {
-        return 0xffff;
-    }
-    return buffer1[virtualInputPos++];
-}
-
-void SPR_out(unsigned char byte) {
-    bufferAppend(buffer2, byte);
-}
-
-void readInput() {
-    int c;
-    while ((c = std::cin.get()) != EOF) {
-        bufferAppend(buffer1, c);
-    }
-}
-
-void copy2To1() {
-    freeBuffer1();
-    std::swap(buffer1, buffer2);
-    buffer1Size = buffer2Size;
     buffer2Size = 0;
 }
 
-unsigned char compress() {
-    virtualInputPos = 0;
+bool compress() {
     freeBuffer2();
-    bufferAppend(buffer2, 1);
-    SPR_compress(); // Call to shitpress compression function
+    appendToBuffer(buffer2, 1);
+
+    SH_compress(); // Call to shitpress compression function
+
     buffer2[0] = buffer2Size < buffer1Size;
     return buffer2[0];
 }
 
-unsigned char decompress() {
+bool decompress() {
     if (buffer1[0]) {
-        virtualInputPos = 1;
         freeBuffer2();
-        SPR_decompress(); // Call to shitpress decompression function
-        copy2To1();
+        virtualInputPos = 1;
+
+        SH_decompress(); // Call to shitpress decompression function
+
+        buffer1 = buffer2;
+        buffer1Size = buffer2Size;
+        buffer2Size = 0;
     }
     return buffer1[0];
 }
 
-void outputBuffer(const buffer_t& buffer) {
+void outputBuffer(const Buffer& buffer) {
     std::cout.write(reinterpret_cast<const char*>(buffer.data()), buffer.size());
 }
 
 int main(int argc, char** argv) {
     char param = (argc > 1 && argv[1][0] == '-' && argv[1][2] == '\0') ? argv[1][1] : '\0';
 
+    Buffer buffer1;
+    unsigned long buffer1Size = 0;
+
     if (param == 'x') {
-        readInput();
-        while (decompress());
+        readInput(buffer1);
+        while (decompress()) {
+            // Do nothing
+        }
         outputBuffer(buffer1.begin() + 1, buffer1.end());
     } else if (param == 'h') {
         std::cout << "supershitpress: modified shitpress compression utility\n"
                   << "usage: stdin -> supershitpress [-x] -> out\n"
-                  << "by drummyfish, released under CC0 1.0\n";
+                  << "by erik\n";
     } else {
-        bufferAppend(buffer1, 0);
-        readInput();
+        appendToBuffer(buffer1, 0);
+        readInput(buffer1);
         while (compress()) {
-            copy2To1();
+            buffer1 = buffer2;
+            buffer1Size = buffer2Size;
+            buffer2Size = 0;
         }
         outputBuffer(buffer1);
     }
 
-    freeBuffer1();
-    freeBuffer2();
-
     return 0;
-}```
+}
