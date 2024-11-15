@@ -1,4 +1,4 @@
-# shoat
+# tinycompress
 
 Tiny suckless compression library. 
 
